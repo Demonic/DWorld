@@ -1,12 +1,10 @@
 package net.Demonly.dworld.manager;
 
 import net.Demonly.dworld.DWorld;
-import org.bukkit.Chunk;
-import org.bukkit.World;
-import org.bukkit.WorldCreator;
-import org.bukkit.WorldType;
+import org.bukkit.*;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.event.Listener;
+import org.bukkit.scheduler.BukkitRunnable;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -76,10 +74,15 @@ public class WorldManager implements Listener
 
         try
         {
-            WorldCreator worldCreator = new WorldCreator(name);
-            worldCreator.environment(World.Environment.NORMAL);
-            worldCreator.type(WorldType.NORMAL);
-            worldCreator.createWorld();
+            new BukkitRunnable()
+            {
+                public void run() {
+                    WorldCreator worldCreator = new WorldCreator(name);
+                    worldCreator.environment(World.Environment.NORMAL);
+                    worldCreator.type(WorldType.NORMAL);
+                    worldCreator.createWorld();
+                }
+            }.runTaskAsynchronously(plugin);
         } catch (Exception e) {
             plugin.log().error("ERROR CREATING WORLD: {} !", name, e);
         }
@@ -89,10 +92,16 @@ public class WorldManager implements Listener
     {
         try
         {
-            WorldCreator worldCreator = new WorldCreator(name);
-            worldCreator.environment(World.Environment.NORMAL);
-            worldCreator.type(WorldType.NORMAL);
-            worldCreator.createWorld();
+            new BukkitRunnable()
+            {
+                public void run()
+                {
+                    WorldCreator worldCreator = new WorldCreator(name);
+                    worldCreator.environment(World.Environment.NORMAL);
+                    worldCreator.type(WorldType.NORMAL);
+                    worldCreator.createWorld();
+                }
+            }.runTaskAsynchronously(plugin);
         } catch (Exception e) {
             plugin.log().error("ERROR LOADING WORLD: {} !", name, e);
         }
@@ -102,13 +111,19 @@ public class WorldManager implements Listener
     {
         try
         {
-            plugin.getServer().unloadWorld(world, true);
-            Chunk[] chunks = world.getLoadedChunks();
-            Arrays.stream(chunks).iterator().forEachRemaining(chunk ->
+            new BukkitRunnable()
             {
-                chunk.unload();
-            });
-            System.gc();
+                public void run() {
+                    plugin.getServer().unloadWorld(world, true);
+                    Chunk[] chunks = world.getLoadedChunks();
+                    Arrays.stream(chunks).iterator().forEachRemaining(chunk ->
+                    {
+                        chunk.unload();
+                    });
+                    System.gc();
+                }
+            }.runTaskAsynchronously(plugin);
+
         } catch (Exception e) {
             plugin.log().error("ERROR UNLOADING WORLD {} !", world, e);
         }
