@@ -38,7 +38,7 @@ public class WorldManager implements Listener
                     loadedWorlds.add(world);
 
                 } else {
-                    plugin.log().info("World {} does not exist attempting to create..", world);
+                    plugin.log().info("Attempting to load world {}", world);
                     createWorld(world);
                 }
             }
@@ -111,18 +111,13 @@ public class WorldManager implements Listener
     {
         try
         {
-            new BukkitRunnable()
+            plugin.getServer().unloadWorld(world, true);
+            Chunk[] chunks = world.getLoadedChunks();
+            Arrays.stream(chunks).iterator().forEachRemaining(chunk ->
             {
-                public void run() {
-                    plugin.getServer().unloadWorld(world, true);
-                    Chunk[] chunks = world.getLoadedChunks();
-                    Arrays.stream(chunks).iterator().forEachRemaining(chunk ->
-                    {
-                        chunk.unload();
-                    });
-                    System.gc();
-                }
-            }.runTaskAsynchronously(plugin);
+                chunk.unload();
+            });
+            System.gc();
 
         } catch (Exception e) {
             plugin.log().error("ERROR UNLOADING WORLD {} !", world, e);

@@ -32,9 +32,6 @@ public class DWorld extends JavaPlugin
     public void onDisable()
     {
         logger.info("DWorld is unloading the world");
-
-        // unload
-        worldManager.unloadWorlds();
     }
 
     public FileConfiguration getWorldsConfig() {
