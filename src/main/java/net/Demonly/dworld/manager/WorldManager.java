@@ -32,15 +32,16 @@ public class WorldManager implements Listener
         {
             if (worlds.getBoolean("Worlds." + world + ".enabled"))
             {
-                if (worldExists(world)) {
-                    plugin.log().info("World {} exists, loading...", world);
-                    loadWorld(world);
-                    loadedWorlds.add(world);
-
-                } else {
-                    plugin.log().info("Attempting to load world {}", world);
-                    createWorld(world);
-                }
+                plugin.log().info("{} loading..", world);
+                loadWorld(world,
+                        worlds.getString("Worlds." + world + ".generator"),
+                        worlds.getString("Worlds." + world + ".environment"),
+                        worlds.getBoolean("Worlds." + world + "pvp"),
+                        worlds.getObject("Worlds." + world + ".spawn_location", Location.class),
+                        worlds.getString("Worlds." + world + ".difficulty"),
+                        worlds.getBoolean("Worlds." + world + ".allow_monsters"),
+                        worlds.getBoolean("Worlds." + world + ".allow_animals"));
+                loadedWorlds.add(world);
             }
         });
     }
@@ -68,27 +69,7 @@ public class WorldManager implements Listener
         return loadedWorlds;
     }
 
-    private void createWorld(String name)
-    {
-        // We're eventually going to get the world details from the config here.
-
-        try
-        {
-            new BukkitRunnable()
-            {
-                public void run() {
-                    WorldCreator worldCreator = new WorldCreator(name);
-                    worldCreator.environment(World.Environment.NORMAL);
-                    worldCreator.type(WorldType.NORMAL);
-                    worldCreator.createWorld();
-                }
-            }.runTaskAsynchronously(plugin);
-        } catch (Exception e) {
-            plugin.log().error("ERROR CREATING WORLD: {} !", name, e);
-        }
-    }
-
-    private void loadWorld(String name)
+    private void loadWorld(String name, String generator, String environment, boolean pvp, Location spawn, String difficulty, boolean allowMonsters, boolean allowAnimals)
     {
         try
         {
@@ -97,11 +78,15 @@ public class WorldManager implements Listener
                 public void run()
                 {
                     WorldCreator worldCreator = new WorldCreator(name);
-                    worldCreator.environment(World.Environment.NORMAL);
-                    worldCreator.type(WorldType.NORMAL);
-                    worldCreator.createWorld();
+                    //if (null != environment) worldCreator.environment(World.Environment.valueOf(environment));
+                    //if (null != generator) worldCreator.generator(generator);
+                    World w = worldCreator.createWorld();
+                    w.setPVP(pvp);
+                    if (null != spawn) w.setSpawnLocation(spawn);
+                    w.setDifficulty(Difficulty.valueOf(difficulty));
+                    w.setSpawnFlags(allowMonsters, allowAnimals);
                 }
-            }.runTaskAsynchronously(plugin);
+            }.run();
         } catch (Exception e) {
             plugin.log().error("ERROR LOADING WORLD: {} !", name, e);
         }

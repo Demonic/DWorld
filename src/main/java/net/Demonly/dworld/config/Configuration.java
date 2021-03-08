@@ -19,8 +19,8 @@ public class Configuration
     public Configuration(File file, DWorld plugin)
     {
         this.file = file;
-        this.load();
         this.plugin = plugin;
+        this.load();
     }
 
     public FileConfiguration getConfig() {
@@ -30,11 +30,9 @@ public class Configuration
     private void load()
     {
         try {
-            if (!file.exists()) {
-                if (!plugin.getDataFolder().exists()) {
-                    plugin.getDataFolder().mkdirs();
-                }
-
+            if (!file.exists())
+            {
+                plugin.getDataFolder().mkdirs();
                 try {
                     InputStream in = plugin.getResource(file.getName());
                     OutputStream out = new FileOutputStream(file);
@@ -52,7 +50,7 @@ public class Configuration
         }
     }
 
-    private void save()
+    public void saveConfig()
     {
         try {
             config.save(file);
