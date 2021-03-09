@@ -7,16 +7,13 @@ import org.bukkit.event.Listener;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 
 public class WorldManager implements Listener
 {
 
     private FileConfiguration worlds;
     private DWorld plugin;
-    private List<String> loadedWorlds = new ArrayList<String>();
 
     public WorldManager(FileConfiguration worlds, DWorld plugin)
     {
@@ -26,7 +23,6 @@ public class WorldManager implements Listener
 
     public void loadWorlds()
     {
-        List<String> list = new ArrayList<String>();
 
         worlds.getConfigurationSection("Worlds").getKeys(false).forEach(world ->
         {
@@ -40,8 +36,9 @@ public class WorldManager implements Listener
                         worlds.getObject("Worlds." + world + ".spawn_location", Location.class),
                         worlds.getString("Worlds." + world + ".difficulty"),
                         worlds.getBoolean("Worlds." + world + ".allow_monsters"),
-                        worlds.getBoolean("Worlds." + world + ".allow_animals"));
-                loadedWorlds.add(world);
+                        worlds.getBoolean("Worlds." + world + ".allow_animals"),
+                        worlds.getLong("Worlds." + world + ".seed"));
+                plugin.getWorlds().getLoadedWorlds().add(Bukkit.getWorld(world));
             }
         });
     }
@@ -64,12 +61,7 @@ public class WorldManager implements Listener
         });
     }
 
-    public List<String> getLoadedWorlds()
-    {
-        return loadedWorlds;
-    }
-
-    private void loadWorld(String name, String generator, String environment, boolean pvp, Location spawn, String difficulty, boolean allowMonsters, boolean allowAnimals)
+    private void loadWorld(String name, String generator, String environment, boolean pvp, Location spawn, String difficulty, boolean allowMonsters, boolean allowAnimals, Long seed)
     {
         try
         {
@@ -78,12 +70,15 @@ public class WorldManager implements Listener
                 public void run()
                 {
                     WorldCreator worldCreator = new WorldCreator(name);
-                    //if (null != environment) worldCreator.environment(World.Environment.valueOf(environment));
-                    //if (null != generator) worldCreator.generator(generator);
+                    if (null != environment) worldCreator.environment(World.Environment.valueOf(environment));
+                    if (null != generator) worldCreator.generator(generator);
+                    if (null != seed) worldCreator.seed(seed);
+
                     World w = worldCreator.createWorld();
+
                     w.setPVP(pvp);
                     if (null != spawn) w.setSpawnLocation(spawn);
-                    w.setDifficulty(Difficulty.valueOf(difficulty));
+                    if (null != difficulty) w.setDifficulty(Difficulty.valueOf(difficulty));
                     w.setSpawnFlags(allowMonsters, allowAnimals);
                 }
             }.run();
@@ -92,11 +87,13 @@ public class WorldManager implements Listener
         }
     }
 
-    private void unloadWorld(World world)
+    public void unloadWorld(World world)
     {
         try
         {
+            plugin.log().info("ATTEMPTING TO UNLOAD WORLD {} !", world);
             plugin.getServer().unloadWorld(world, true);
+            plugin.getWorlds().getLoadedWorlds().remove(world);
             Chunk[] chunks = world.getLoadedChunks();
             Arrays.stream(chunks).iterator().forEachRemaining(chunk ->
             {

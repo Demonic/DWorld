@@ -1,14 +1,20 @@
 package net.Demonly.dworld;
 
+import net.Demonly.dworld.commands.CommandWorldsMenu;
 import net.Demonly.dworld.config.Configuration;
+import net.Demonly.dworld.listeners.MobSpawnListener;
 import net.Demonly.dworld.manager.WorldManager;
+import net.Demonly.dworld.manager.Worlds;
+import net.Demonly.dworld.menu.WorldsMenu;
 import org.bukkit.Bukkit;
+import org.bukkit.World;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;;
+import java.io.File;
+import java.util.List;;
 
 public class DWorld extends JavaPlugin
 {
@@ -16,10 +22,15 @@ public class DWorld extends JavaPlugin
     private Configuration worldsConfig;
     private Configuration baseConfig;
     private WorldManager worldManager;
+    private Worlds worlds = new Worlds();
+    private WorldsMenu worldsMenu;
 
     @Override
     public void onEnable()
     {
+        // Register commands
+        this.getCommand("dworlds").setExecutor(new CommandWorldsMenu(this));
+
         // Logging
         logger.info("DWorld creating all worlds in 7 days. This may take awhile.");
         loadConfigs();
@@ -30,6 +41,12 @@ public class DWorld extends JavaPlugin
         // Worlds
         setupWorldManager();
         worldManager.loadWorlds();
+        initializeMenus();
+
+        // Register listeners
+        getServer().getPluginManager().registerEvents(new MobSpawnListener(this), this);
+        getServer().getPluginManager().registerEvents(worldsMenu, this);
+
     }
 
     @Override
@@ -54,15 +71,35 @@ public class DWorld extends JavaPlugin
         return logger;
     }
 
+    public Worlds getWorlds()
+    {
+        return worlds;
+    }
+
     private void loadConfigs()
     {
         worldsConfig = new Configuration(new File(getDataFolder(), "worlds.yml"), this);
         baseConfig = new Configuration(new File(getDataFolder(), "config.yml"), this);
     }
 
+    public WorldsMenu getWorldsMenu()
+    {
+        return worldsMenu;
+    }
+
+    private void initializeMenus()
+    {
+        worldsMenu = new WorldsMenu(this);
+    }
+
     private void setupWorldManager()
     {
         this.worldManager = new WorldManager(worldsConfig.getConfig(), this);
+    }
+
+    public WorldManager getWorldManager()
+    {
+        return worldManager;
     }
 
     private void addDefaultWorlds()
@@ -73,6 +110,7 @@ public class DWorld extends JavaPlugin
             {
                 worldsConfig.getConfig().set("Worlds." + world.getName() + ".enabled", true);
                 worldsConfig.getConfig().set("Worlds." + world.getName() + ".difficulty", world.getDifficulty().name());
+                worldsConfig.getConfig().set("Worlds." + world.getName() + ".seed", world.getSeed());
                 worldsConfig.getConfig().set("Worlds." + world.getName() + ".pvp_enabled", world.getPVP());
                 worldsConfig.getConfig().set("Worlds." + world.getName() + ".spawn_location", world.getSpawnLocation().toString());
                 worldsConfig.getConfig().set("Worlds." + world.getName() + ".type", world.getEnvironment().name());
